@@ -8,39 +8,35 @@
 import Foundation
 
 final class ContactManager {
-    var contactInformation: [ContactInformation] = []
+    var contactInformationArray: Set<ContactInformation> = []
     let detector = Detector()
     let convertor = Converter()
     let checker = Checker()
     
     func startProcess() {
-        var identifier = ""
+        var identifier: Bool = true
         
         repeat {
-            print(PrintMessage.startComment)
+            print(PrintMessage.startComment, terminator: "")
             let receiveUserInputValues = userInputValue()
-            let convertedUserInputValues = convertor.convertToCharacter(this: receiveUserInputValues)
-            
-            let removedBlankUserInputValues = detector.excludeSpaceWord(convertedUserInputValues)
-            let slashIndexArray = detector.extractIndexWithSlash(from: removedBlankUserInputValues)
-            
-            guard let firstSlashIndex = slashIndexArray.first else {
-                return
+            switch MenuStart(rawValue: receiveUserInputValues) {
+            case .addContact:
+                addContact()
+                break
+            case .viewContact:
+                viewContactList(value: contactInformationArray)
+                break
+            case .searchContact:
+                searchByName(value: contactInformationArray)
+                break
+            case .exit:
+                identifier = exitProgram()
+                exit(1)
+                break
+            default:
+                print(PrintMessage.choiceWrorngMenu)
             }
-            guard let lastSlashIndex = slashIndexArray.last else {
-                return
-            }
-            
-            let inputValuesCount = convertedUserInputValues.count
-            
-            let nameWord = joinWords(first: 0, second: firstSlashIndex, this: removedBlankUserInputValues)
-            let ageWord = joinWords(first: firstSlashIndex, second: lastSlashIndex, this: removedBlankUserInputValues)
-            let phoneNumberWord = joinWords(first: lastSlashIndex, second: inputValuesCount, this: removedBlankUserInputValues)
-            
-            let nameString = checker.checkCorrectWord(target: convertor.convertToString(nameWord))
-            let ageString = checker.checkCorrectWord(target: convertor.convertToString(ageWord))
-            let phoneNumberString = checker.checkCorrectWord(target: convertor.convertToString(phoneNumberWord))
-        } while identifier == ""
+        } while identifier == true
     }
 }
 
@@ -54,15 +50,51 @@ extension ContactManager: InputPossible {
 }
 
 extension ContactManager {
-    func joinWords(first index1: Int, second index2: Int, this word: [Character]) -> [Character] {
-        var usefulValue = [Character]()
-        for index in index1..<index2 {
-            let tempStorage = word[index]
-            if tempStorage == "/" {
-                continue
-            }
-            usefulValue.append(tempStorage)
+    enum MenuStart: String, CustomStringConvertible {
+        case addContact = "1"
+        case viewContact = "2"
+        case searchContact = "3"
+        case exit = "x"
+        
+        var description: String {
+            return self.rawValue
         }
-        return usefulValue
+    }
+}
+
+extension ContactManager: SystemMenuWorkable {
+    func addContact() {
+        print(PrintMessage.requestContactInformation, terminator: "")
+        let receiveUserInputValues = userInputValue()
+        if receiveUserInputValues == "" {
+            print(PrintMessage.nothingUserInput)
+            return
+        }
+        let convertedUserInputValues = convertor.convertToCharacter(this: receiveUserInputValues)
+        let removedBlankUserInputValues = detector.excludeSpaceWord(convertedUserInputValues)
+        let combinedUserInputValues = convertor.convertToString(removedBlankUserInputValues)
+        let splitedUserInputValues = combinedUserInputValues.split(separator: "/").map{ String($0) }
+        
+        guard let checkUserInputValues = checker.checkCorrectWord(target: splitedUserInputValues) else {
+            return
+        }
+        contactInformationArray.insert(checkUserInputValues)
+        
+        PrintMessage.validUserInput(value: checkUserInputValues)
+    }
+    
+    func viewContactList(value: Set<ContactInformation>) {
+        PrintMessage.viewContact(list: value)
+    }
+    
+    func searchByName(value: Set<ContactInformation>) {
+        print(PrintMessage.requestToSearchName, terminator: "")
+        let searchName = userInputValue()
+        PrintMessage.searchContact(list: value, word: searchName)
+    }
+    
+    func exitProgram() -> Bool {
+        print(PrintMessage.exitProgram)
+        return false
     }
 }
