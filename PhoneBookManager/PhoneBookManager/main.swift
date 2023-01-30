@@ -8,25 +8,52 @@
 import Foundation
 
 func execute() {
-    OutputManager.printInputMessage()
+    print(InfoMessage.requestMenuInput, terminator: "")
     let userInput = InputManager.userInput()
+    
+    guard let userMenuInput = UserMenu(rawValue: userInput) else {
+        print(InputError.invalidMenu.errorDescription ?? "")
+        execute()
+        return
+    }
+    
+    switch userMenuInput {
+    case .addContact:
+        addContact()
+    case .displayContacts:
+        PhoneBookManager.shared.displayContacts()
+    case .searchContact:
+        searchContact()
+    case .quitProgram:
+        return
+    }
+    execute()
+    
+    func addContact() {
+        print(InfoMessage.requestAddContact, terminator: "")
+        let userInput = InputManager.userInput()
 
-    do {
-        guard userInput.isEmpty == false else {
-            throw InputError.emptyInput
+        do {
+            guard userInput.isEmpty == false else {
+                throw InputError.emptyInput
+            }
+
+            let parsedInput = try InputManager.parse(userInput)
+            let contact = try InputManager.contact(from: parsedInput)
+
+            PhoneBookManager.shared.add(contact: contact)
+        } catch {
+            print(error.localizedDescription)
         }
-
-        let parsedInput = try InputManager.parse(userInput)
-
-        let name = try InputManager.getName(from: parsedInput)
-        let age = try InputManager.getAge(from: parsedInput)
-        let phoneNumber = try InputManager.getPhoneNumber(from: parsedInput)
-
-        OutputManager.printInitialInputInfo(name: name, age: age, phoneNumber: phoneNumber)
-    } catch {
-        print(error.localizedDescription)
     }
 
+    func searchContact() {
+        print(InfoMessage.requestSearchContact, terminator: "")
+        let userInput = InputManager.userInput()
+
+        let searchedContact = PhoneBookManager.shared.searchContact(by: userInput)
+        searchedContact?.forEach { print($0.description) }
+    }
 }
 
 execute()

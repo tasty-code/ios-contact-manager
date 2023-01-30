@@ -33,15 +33,24 @@ enum InputManager {
         throw InputError.invalidInput
     }
     
-    static func getName(from array: [String]) throws -> String {
+    static func contact(from array: [String]) throws -> Contact {
+        let name = try name(from: array)
+        let age = try age(from: array)
+        let phoneNumber = try phoneNumber(from: array)
+        
+        return Contact(name: name, age: age, phoneNumber: phoneNumber)
+        
+    }
+    
+    private static func name(from array: [String]) throws -> String {
         guard let name = array[safe: 0] else {
             throw InputError.invalidName
         }
         
-        return name.removeWhiteSpaces()
+        return name.removingWhiteSpaces()
     }
     
-    static func getAge(from array: [String]) throws -> Int {
+    private static func age(from array: [String]) throws -> Int {
         guard let safeValue = array[safe: 1],
               let age = Int(safeValue), 0..<1000 ~= age else {
             throw InputError.invalidAge
@@ -50,7 +59,7 @@ enum InputManager {
         return age
     }
     
-    static func getPhoneNumber(from array: [String]) throws -> String {
+    private static func phoneNumber(from array: [String]) throws -> String {
         let phoneRegEx = #"^\d{2,3}-\d{3,4}-\d{4}$"#
         guard let phoneNumber = array[safe: 2],
               phoneNumber.range(of: phoneRegEx, options: .regularExpression) != nil else {
